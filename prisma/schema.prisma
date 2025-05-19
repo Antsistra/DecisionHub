@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model alternatif {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kode                   String
+  nama                   String
+  status                 String
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  project_id             String                   @db.Uuid
+  projects               projects                 @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hasil_profile_matching hasil_profile_matching[]
+  nilai                  nilai[]
+  nilai_wp               nilai_wp[]
+}
+
+model kriteria {
+  id                                           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_kriteria                                String
+  bobot                                        Float
+  created_at                                   DateTime       @default(now()) @db.Timestamptz(6)
+  project_id                                   String         @db.Uuid
+  projects                                     projects       @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sub_kriteria_sub_kriteria_kriteriaTokriteria sub_kriteria[] @relation("sub_kriteria_kriteriaTokriteria")
+}
+
+model projects {
+  id                     String                   @id(map: "Project_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  description            String
+  code                   String
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  bobot_CF               Float?                   @default(0) @db.Real
+  bobot_SF               Float?                   @default(0) @db.Real
+  metode                 String?
+  alternatif             alternatif[]
+  hasil_profile_matching hasil_profile_matching[]
+  kriteria               kriteria[]
+  user_project           user_project[]
+  weighted_kriteria      weighted_kriteria[]
+}
+
+model sub_kriteria {
+  id                                       String   @id @default(dbgenerated("gen_random_uuid()"))
+  sub_kriteria                             String
+  kriteria                                 String   @db.Uuid
+  faktor                                   String
+  profil                                   Int      @db.SmallInt
+  created_at                               DateTime @default(now()) @db.Timestamptz(6)
+  kode                                     String   @unique
+  nilai                                    nilai[]
+  kriteria_sub_kriteria_kriteriaTokriteria kriteria @relation("sub_kriteria_kriteriaTokriteria", fields: [kriteria], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_project {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  project_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  projects   projects @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  id           String         @id @db.Uuid
+  email        String
+  name         String
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  user_project user_project[]
+}
+
+model nilai {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alternatif_id  String       @db.Uuid
+  subKriteria_id String
+  nilai          Int
+  nilai_gap      BigInt
+  nilai_bobot    Float
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  alternatif     alternatif   @relation(fields: [alternatif_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sub_kriteria   sub_kriteria @relation(fields: [subKriteria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model hasil_profile_matching {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alternatif_id String     @db.Uuid
+  project_id    String     @db.Uuid
+  nilai_akhir   Float
+  rangking      BigInt?
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  alternatif    alternatif @relation(fields: [alternatif_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  projects      projects   @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([alternatif_id, project_id], map: "hasil_profile_matching_alternatif_project_unique")
+}
+
+model weighted_kriteria {
+  id                           String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nama_kriteria                String
+  keterangan                   String
+  bobot                        BigInt
+  created_at                   DateTime                       @default(now()) @db.Timestamptz(6)
+  project_id                   String                         @db.Uuid
+  kode                         String
+  keterangan_weighted_kriteria keterangan_weighted_kriteria[]
+  nilai_wp                     nilai_wp[]
+  projects                     projects                       @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model keterangan_weighted_kriteria {
+  id                BigInt            @id @default(autoincrement())
+  kriteria_id       String            @db.Uuid
+  keterangan        String
+  bobot             BigInt
+  created_at        DateTime          @default(now()) @db.Timestamptz(6)
+  weighted_kriteria weighted_kriteria @relation(fields: [kriteria_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model nilai_wp {
+  id                   String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alternatif_id        String?            @db.Uuid
+  weighted_kriteria_id String?            @db.Uuid
+  nilai                Float?
+  created_at           DateTime           @default(now()) @db.Timestamptz(6)
+  alternatif           alternatif?        @relation(fields: [alternatif_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  weighted_kriteria    weighted_kriteria? @relation(fields: [weighted_kriteria_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([alternatif_id, weighted_kriteria_id], name: "nilai_wp_alternatif_weighted_unique")
+}
