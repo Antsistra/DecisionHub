@@ -10,16 +10,16 @@ datasource db {
 }
 
 model alternatif {
-  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  kode                   String
-  nama                   String
-  status                 String
-  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
-  project_id             String                   @db.Uuid
-  projects               projects                 @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  hasil_profile_matching hasil_profile_matching[]
-  nilai                  nilai[]
-  nilai_wp               nilai_wp[]
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kode       String
+  nama       String
+  status     String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  project_id String   @db.Uuid
+  projects   projects @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  nilai    nilai[]
+  nilai_wp nilai_wp[]
 }
 
 model kriteria {
@@ -33,19 +33,18 @@ model kriteria {
 }
 
 model projects {
-  id                     String                   @id(map: "Project_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                   String
-  description            String
-  code                   String
-  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
-  bobot_CF               Float?                   @default(0) @db.Real
-  bobot_SF               Float?                   @default(0) @db.Real
-  metode                 String?
-  alternatif             alternatif[]
-  hasil_profile_matching hasil_profile_matching[]
-  kriteria               kriteria[]
-  user_project           user_project[]
-  weighted_kriteria      weighted_kriteria[]
+  id                String              @id(map: "Project_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  description       String
+  code              String
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  bobot_CF          Float?              @default(0) @db.Real
+  bobot_SF          Float?              @default(0) @db.Real
+  metode            String?
+  alternatif        alternatif[]
+  kriteria          kriteria[]
+  user_project      user_project[]
+  weighted_kriteria weighted_kriteria[]
 }
 
 model sub_kriteria {
@@ -87,19 +86,6 @@ model nilai {
   created_at     DateTime     @default(now()) @db.Timestamptz(6)
   alternatif     alternatif   @relation(fields: [alternatif_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   sub_kriteria   sub_kriteria @relation(fields: [subKriteria_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model hasil_profile_matching {
-  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  alternatif_id String     @db.Uuid
-  project_id    String     @db.Uuid
-  nilai_akhir   Float
-  rangking      BigInt?
-  created_at    DateTime   @default(now()) @db.Timestamptz(6)
-  alternatif    alternatif @relation(fields: [alternatif_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  projects      projects   @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([alternatif_id, project_id], map: "hasil_profile_matching_alternatif_project_unique")
 }
 
 model weighted_kriteria {
